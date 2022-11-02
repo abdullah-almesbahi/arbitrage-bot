@@ -1,0 +1,26 @@
+{
+  "name": "hardhat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "bot": "npx hardhat run src/main.ts",
+    "dev": "npx hardhat node",
+    "test": "npx hardhat node",
+    "deploy": "npx hardhat run scripts/deploy.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@uniswap/sdk": "^3.0.3",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "chai": "^4.3.6",
+    "dotenv": "^10.0.0",
+    "hardhat": "^2.12.2"
+  }
+}
