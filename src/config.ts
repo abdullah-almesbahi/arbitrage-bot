@@ -1,12 +1,13 @@
-const HDWalletProvider = require("@truffle/hdwallet-provider");
+// const HDWalletProvider = require("@truffle/hdwallet-provider");
 const IUniswapV2Router02 = require("@uniswap/v2-periphery/build/IUniswapV2Router02.json");
 const IUniswapV2Factory = require("@uniswap/v2-core/build/IUniswapV2Factory.json");
-import { ethers, OnceBlockable } from "hardhat";
+import { JsonRpcProvider } from "@ethersproject/providers/src.ts/json-rpc-provider";
+import env, { ethers } from "hardhat";
 
-let provider: typeof ethers.providers.JsonRpcProvider;
+let provider: JsonRpcProvider;
 
 const isLocal = true;
-const isDeployed = true;
+const isDeployed = false;
 
 if (!isLocal) {
   // const provider = new ethers.providers.JsonRpcProvider();
@@ -18,8 +19,7 @@ if (!isLocal) {
   new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
   // web3 = new Web3(provider);
 } else {
-  provider = new ethers.providers.JsonRpcProvider("ws://127.0.0.1:8545", "localhost");
-  // web3 = new Web3("ws://127.0.0.1:7545");
+  provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:7545", { chainId: 1337, name: "unknown" });
 }
 
 // const IArbitrage = require('../build/contracts/Arbitrage.json');
@@ -28,7 +28,7 @@ if (!isLocal) {
 //   IArbitrage.networks[1].address,
 // );
 
-const exchangesForkedUniswapV2 = {
+export const exchangesForkedUniswapV2 = {
   UNISWAP: {
     V2_ROUTER_02_ADDRESS: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
     FACTORY_ADDRESS: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",

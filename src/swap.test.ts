@@ -1,79 +1,70 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
-import Web3 from 'web3';
-import { Token } from '@uniswap/sdk';
-import config from '../config/index';
-import { calculatePrice, getPairContract } from './helpers/blockchain';
+import { Token } from "@uniswap/sdk";
+import { ethers } from "hardhat";
+import config, { exchangesForkedUniswapV2 } from "./config";
+import { BigNumber } from "@ethersproject/bignumber";
+import { calculatePrice, getPairContract } from "./helpers/blockchain";
+// const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
-const IUniswapV2Router02 = require('@uniswap/v2-periphery/build/IUniswapV2Router02.json');
-const IUniswapV2Factory = require('@uniswap/v2-core/build/IUniswapV2Factory.json');
-const IERC20 = require('@openzeppelin/contracts/build/contracts/ERC20.json');
-
-// -- SETUP NETWORK & WEB3 -- //
+// const IUniswapV2Router02 = require("@uniswap/v2-periphery/build/IUniswapV2Router02.json");
+// const IUniswapV2Factory = require("@uniswap/v2-core/build/IUniswapV2Factory.json");
+const IERC20 = require("@openzeppelin/contracts/build/contracts/ERC20.json");
 
 const chainId = 1;
-const web3 = new Web3('http://127.0.0.1:7545');
+// const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545");
+const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:7545", { chainId: 1337, name: "unknown" });
+const signer = provider.getSigner();
 
 // -- CONFIGURE VALUES HERE -- //
 
 const V2_FACTORY_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.FACTORY;
 const V2_ROUTER_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.ROUTER;
-const UNLOCKED_ACCOUNT = '0xdEAD000000000000000042069420694206942069'; // SHIB Unlocked Account
+const UNLOCKED_ACCOUNT = "0xdEAD000000000000000042069420694206942069"; // SHIB Unlocked Account
 const WETH_ADDRESS = config.ARBITRAGE_TOKENS[0].for;
 const ERC20_ADDRESS = config.ARBITRAGE_TOKENS[0].against;
-const AMOUNT = '40500000000000'; // 40,500,000,000,000 SHIB -- Tokens will automatically be converted to wei
-// const AMOUNT = '9050000000'; // 40,500,000,000,000 SHIB -- Tokens will automatically be converted to wei
+const AMOUNT = "40500000000000"; // 40,500,000,000,000 SHIB -- Tokens will automatically be converted to wei
 const GAS = 450000;
 
 // -- SETUP ERC20 CONTRACT & TOKEN -- //
+const WETH_CONTRACT = new ethers.Contract(WETH_ADDRESS, IERC20.abi, provider);
+const ERC20_CONTRACT = new ethers.Contract(ERC20_ADDRESS, IERC20.abi, provider);
 
-const WETH_CONTRACT = new web3.eth.Contract(IERC20.abi, WETH_ADDRESS);
-const ERC20_CONTRACT = new web3.eth.Contract(IERC20.abi, ERC20_ADDRESS);
+async function manipulatePrice(tokens: Array<Token>, account: string) {
+  // const impersonatedSigner = await ethers.getImpersonatedSigner(UNLOCKED_ACCOUNT);
+  const signer2 = provider.getSigner(UNLOCKED_ACCOUNT);
 
-async function manipulatePrice(tokens, account) {
   console.log(`\nBeginning Swap...\n`);
 
   console.log(`Input Token: ${tokens[0].symbol}`);
   console.log(`Output Token: ${tokens[1].symbol}\n`);
 
-  // @ts-ignore
-  const amountIn = new web3.utils.BN(web3.utils.toWei(AMOUNT, 'ether'));
+  // convert from ether to wei
+  const amountIn = BigNumber.from(ethers.utils.parseEther(AMOUNT));
 
   const path = [tokens[0].address, tokens[1].address];
   const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
 
-  // @ts-ignore
-  await ERC20_CONTRACT.methods.approve(V2_ROUTER_TO_USE._address, amountIn).send({ from: UNLOCKED_ACCOUNT });
-  const receipt = await V2_ROUTER_TO_USE.methods
-    .swapExactTokensForTokens(amountIn, 0, path, account, deadline)
-    .send({ from: UNLOCKED_ACCOUNT, gas: GAS });
+  const txApproveResponse = await ERC20_CONTRACT.connect(signer2).approve(V2_ROUTER_TO_USE.address, amountIn);
+  const txApproveReceipt = await txApproveResponse.wait();
+  // console.log("txApproveReceipt", txApproveReceipt);
+
+  const txSwapResponse = await V2_ROUTER_TO_USE.connect(signer2).swapExactTokensForTokens(amountIn, 0, path, account, deadline);
+  const txSwapReceipt = await txSwapResponse.wait();
+  // console.log("txSwapReceipt", txSwapReceipt);
 
   console.log(`Swap Complete!\n`);
 
-  return receipt;
+  return txSwapReceipt;
 }
 
 const main = async () => {
-  const accounts = await web3.eth.getAccounts();
-  const account = accounts[1]; // This will be the account to recieve WETH after we perform the swap to manipulate price
+  // This will be the account to recieve WETH after we perform the swap to manipulate price
+  const [account] = await provider.listAccounts();
 
   const pairContract = await getPairContract(V2_FACTORY_TO_USE, ERC20_ADDRESS, WETH_ADDRESS);
 
-  const ERC20_TOKEN = new Token(
-    chainId,
-    ERC20_ADDRESS,
-    18,
-    await ERC20_CONTRACT.methods.symbol().call(),
-    await ERC20_CONTRACT.methods.name().call(),
-  );
+  const ERC20_TOKEN = new Token(chainId, ERC20_ADDRESS, 18, await ERC20_CONTRACT.symbol(), await ERC20_CONTRACT.name());
 
-  const WETH_TOKEN = new Token(
-    chainId,
-    WETH_ADDRESS,
-    18,
-    await WETH_CONTRACT.methods.symbol().call(),
-    await WETH_CONTRACT.methods.name().call(),
-  );
+  const WETH_TOKEN = new Token(chainId, WETH_ADDRESS, 18, await WETH_CONTRACT.symbol(), await WETH_CONTRACT.name());
 
   // Fetch price of SHIB/WETH before we execute the swap
   const priceBefore = await calculatePrice(pairContract);
@@ -84,16 +75,19 @@ const main = async () => {
   const priceAfter = await calculatePrice(pairContract);
 
   const data = {
-    'Price Before': `1 ${WETH_TOKEN.symbol} = ${Number(priceBefore).toFixed(0)} ${ERC20_TOKEN.symbol}`,
-    'Price After': `1 ${WETH_TOKEN.symbol} = ${Number(priceAfter).toFixed(0)} ${ERC20_TOKEN.symbol}`,
+    "Price Before": `1 ${WETH_TOKEN.symbol} = ${Number(priceBefore).toFixed(0)} ${ERC20_TOKEN.symbol}`,
+    "Price After": `1 ${WETH_TOKEN.symbol} = ${Number(priceAfter).toFixed(0)} ${ERC20_TOKEN.symbol}`,
   };
 
   console.table(data);
 
-  let balance = await WETH_CONTRACT.methods.balanceOf(account).call();
-  balance = web3.utils.fromWei(balance.toString(), 'ether');
+  let balance = await WETH_CONTRACT.balanceOf(account);
+  balance = ethers.utils.formatEther(balance.toString());
 
   console.log(`\nBalance in reciever account: ${balance} WETH\n`);
 };
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

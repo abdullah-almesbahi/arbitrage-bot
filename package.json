@@ -4,15 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bot": "npx hardhat run src/main.ts",
-    "dev": "npx hardhat node",
-    "test": "npx hardhat node",
+    "start": "npx hardhat run src/main.ts",
+    "swap": "npx hardhat run src/swap.test.ts",
+    "test": "npx hardhat test",
+    "coverage": "npx hardhat coverage",
     "deploy": "npx hardhat run scripts/deploy.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@openzeppelin/contracts": "^4.4.1",
     "@uniswap/sdk": "^3.0.3",
     "@uniswap/v2-core": "^1.0.1",
     "@uniswap/v2-periphery": "^1.1.0-beta.0"

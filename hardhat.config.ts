@@ -1,10 +1,10 @@
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 dotenv.config();
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "localhost",
+  defaultNetwork: "hardhat",
   networks: {
     mainnet: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
@@ -17,12 +17,7 @@ const config: HardhatUserConfig = {
       },
     },
     hardhat: {},
-    localhost: {
-      url: "http://127.0.0.1:8545",
-      forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-      },
-    },
+    localhost: {},
     // rinkeby: {
     //   url: "https://eth-rinkeby.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
     //   accounts: [privateKey1, privateKey2, ...]
@@ -38,5 +33,14 @@ const config: HardhatUserConfig = {
     },
   },
 };
+
+// task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
+//   const accounts = await hre.ethers.getSigners();
+
+//   for (const account of accounts) {
+//     let wei = await (await account.getBalance()).toString();
+//     console.log(account.address, `${hre.ethers.utils.formatEther(wei)} ETH`);
+//   }
+// });
 
 export default config;

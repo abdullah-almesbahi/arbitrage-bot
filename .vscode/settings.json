@@ -37,5 +37,5 @@
 	},
 	"editor.tabSize": 2,
 	"editor.detectIndentation": false,
-	"prettier.printWidth": 300,
+	"prettier.printWidth": 200,
 }
