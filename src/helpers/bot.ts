@@ -4,7 +4,6 @@ import { Token } from "@uniswap/sdk";
 import { Contract } from "@ethersproject/contracts";
 import { BigNumber } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
-// const IArbitrage = require("../../../build/contracts/Arbitrage.json");
 
 let amount: number;
 let isExecuting = false;
@@ -225,8 +224,12 @@ const executeTrade = async (query: {
   }
 
   if (config.PROJECT_SETTINGS.isDeployed) {
-    // const arbitrage = new ethers.Contract(IArbitrage.networks[1].address, IArbitrage.abi, provider);
-    // await arbitrage.executeTrade(startOnUniswap, query._token0Contract.address, query._token1Contract.address, amount).send({ from: query.account, gas: config.GAS_LIMIT });
+    const IArbitrage = await hre.artifacts.readArtifact("Arbitrage");
+    const getSigner = provider.getSigner();
+    const arbitrage = new ethers.Contract(process.env.ARBITRAGE_CONTRACT_ADDRESS as string, IArbitrage.abi, getSigner);
+    const txExecuteTradeResponse = await arbitrage.executeTrade(startOnUniswap, query._token0Contract.address, query._token1Contract.address, amount);
+    const txExecuteTradeReceipt = await txExecuteTradeResponse.wait();
+    console.log("txExecuteTradeReceipt", txExecuteTradeReceipt);
   }
 
   console.log(`Trade Complete:\n`);

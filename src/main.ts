@@ -7,14 +7,6 @@ const fs = require("fs");
 let uPair: Contract, sPair: Contract;
 
 async function main() {
-  // check if smart contract is deployed
-  // if (config.PROJECT_SETTINGS.isDeployed) {
-  //   if (!fs.existsSync(__dirname + "/../contracts/Arbitrage.json")) {
-  //     console.log("********************************\n Error: You need to deploy contract with this command line: truffle migrate --reset \n********************************");
-  //     return;
-  //   }
-  // }
-
   // Fetch account
   const [account] = await provider.listAccounts();
 

@@ -14,8 +14,6 @@ const chainId = 1;
 const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:7545", { chainId: 1337, name: "unknown" });
 const signer = provider.getSigner();
 
-// -- CONFIGURE VALUES HERE -- //
-
 const V2_FACTORY_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.FACTORY;
 const V2_ROUTER_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.ROUTER;
 const UNLOCKED_ACCOUNT = "0xdEAD000000000000000042069420694206942069"; // SHIB Unlocked Account
