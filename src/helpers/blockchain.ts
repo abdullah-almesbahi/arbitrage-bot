@@ -14,7 +14,7 @@ const IERC20 = require("@openzeppelin/contracts/build/contracts/ERC20.json");
 // if (!config.PROJECT_SETTINGS.isLocal) {
 //   web3 = new Web3(`wss://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`);
 // } else {
-//   web3 = new Web3("ws://127.0.0.1:7545");
+//   web3 = new Web3("ws://127.0.0.1:8545");
 //   web3.eth.net
 //     .isListening()
 //     .then(() => console.log("Connected to ganache blockchain"))
@@ -63,10 +63,7 @@ export async function calculatePrice(_pairContract: Contract): Promise<string> {
 export async function getEstimatedReturn(amount: BigNumber, _routerPath: Array<Contract>, _token0: Token, _token1: Token): Promise<{ amountIn: BigNumber; amountOut: BigNumber }> {
   const trade1 = await _routerPath[0].getAmountsOut(amount, [_token0.address, _token1.address]);
   const trade2 = await _routerPath[1].getAmountsOut(trade1[1], [_token1.address, _token0.address]);
-  const amountIn = BigNumber.from(ethers.utils.formatEther(trade1[0]).toString());
-  const amountOut = BigNumber.from(ethers.utils.formatEther(trade2[1]).toString());
-  // const amountIn = BigNumber.from(trade1[0]);
-  // const amountOut = BigNumber.from(trade2[1]);
-
+  const amountIn = trade1[0];
+  const amountOut = trade2[1];
   return { amountIn, amountOut };
 }

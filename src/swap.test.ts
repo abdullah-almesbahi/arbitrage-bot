@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import config, { exchangesForkedUniswapV2 } from "./config";
 import { BigNumber } from "@ethersproject/bignumber";
 import { calculatePrice, getPairContract } from "./helpers/blockchain";
-// const helpers = require("@nomicfoundation/hardhat-network-helpers");
+const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
 // const IUniswapV2Router02 = require("@uniswap/v2-periphery/build/IUniswapV2Router02.json");
 // const IUniswapV2Factory = require("@uniswap/v2-core/build/IUniswapV2Factory.json");
@@ -11,7 +11,7 @@ const IERC20 = require("@openzeppelin/contracts/build/contracts/ERC20.json");
 
 const chainId = 1;
 // const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545");
-const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:7545", { chainId: 1337, name: "unknown" });
+const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545", { chainId: 31337, name: "unknown" });
 const signer = provider.getSigner();
 
 const V2_FACTORY_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.FACTORY;
@@ -19,7 +19,7 @@ const V2_ROUTER_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.ROUTER;
 const UNLOCKED_ACCOUNT = "0xdEAD000000000000000042069420694206942069"; // SHIB Unlocked Account
 const WETH_ADDRESS = config.ARBITRAGE_TOKENS[0].for;
 const ERC20_ADDRESS = config.ARBITRAGE_TOKENS[0].against;
-const AMOUNT = "40500000000000"; // 40,500,000,000,000 SHIB -- Tokens will automatically be converted to wei
+const AMOUNT = "405000000000000"; // 40,500,000,000,000 SHIB -- Tokens will automatically be converted to wei
 const GAS = 450000;
 
 // -- SETUP ERC20 CONTRACT & TOKEN -- //
@@ -28,7 +28,10 @@ const ERC20_CONTRACT = new ethers.Contract(ERC20_ADDRESS, IERC20.abi, provider);
 
 async function manipulatePrice(tokens: Array<Token>, account: string) {
   // const impersonatedSigner = await ethers.getImpersonatedSigner(UNLOCKED_ACCOUNT);
-  const signer2 = provider.getSigner(UNLOCKED_ACCOUNT);
+  await helpers.impersonateAccount(UNLOCKED_ACCOUNT);
+  const impersonatedSigner = await ethers.getSigner(UNLOCKED_ACCOUNT);
+
+  // const signer2 = provider.getSigner(UNLOCKED_ACCOUNT);
 
   console.log(`\nBeginning Swap...\n`);
 
@@ -41,13 +44,13 @@ async function manipulatePrice(tokens: Array<Token>, account: string) {
   const path = [tokens[0].address, tokens[1].address];
   const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
 
-  const txApproveResponse = await ERC20_CONTRACT.connect(signer2).approve(V2_ROUTER_TO_USE.address, amountIn);
+  const txApproveResponse = await ERC20_CONTRACT.connect(impersonatedSigner).approve(V2_ROUTER_TO_USE.address, amountIn);
   const txApproveReceipt = await txApproveResponse.wait();
-  // console.log("txApproveReceipt", txApproveReceipt);
+  console.log("txApproveReceipt", txApproveReceipt);
 
-  const txSwapResponse = await V2_ROUTER_TO_USE.connect(signer2).swapExactTokensForTokens(amountIn, 0, path, account, deadline);
+  const txSwapResponse = await V2_ROUTER_TO_USE.connect(impersonatedSigner).swapExactTokensForTokens(amountIn, 0, path, account, deadline);
   const txSwapReceipt = await txSwapResponse.wait();
-  // console.log("txSwapReceipt", txSwapReceipt);
+  console.log("txSwapReceipt", txSwapReceipt);
 
   console.log(`Swap Complete!\n`);
 
@@ -56,7 +59,7 @@ async function manipulatePrice(tokens: Array<Token>, account: string) {
 
 const main = async () => {
   // This will be the account to recieve WETH after we perform the swap to manipulate price
-  const [account] = await provider.listAccounts();
+  const [account, account2] = await provider.listAccounts();
 
   const pairContract = await getPairContract(V2_FACTORY_TO_USE, ERC20_ADDRESS, WETH_ADDRESS);
 
@@ -67,7 +70,7 @@ const main = async () => {
   // Fetch price of SHIB/WETH before we execute the swap
   const priceBefore = await calculatePrice(pairContract);
 
-  await manipulatePrice([ERC20_TOKEN, WETH_TOKEN], account);
+  await manipulatePrice([ERC20_TOKEN, WETH_TOKEN], account2);
 
   // Fetch price of SHIB/WETH after the swap
   const priceAfter = await calculatePrice(pairContract);
@@ -79,10 +82,10 @@ const main = async () => {
 
   console.table(data);
 
-  let balance = await WETH_CONTRACT.balanceOf(account);
+  let balance = await WETH_CONTRACT.balanceOf(account2);
   balance = ethers.utils.formatEther(balance.toString());
 
-  console.log(`\nBalance in reciever account: ${balance} WETH\n`);
+  console.log(`\nBalance in reciever account2: ${balance} WETH\n`);
 };
 
 main().catch((error) => {

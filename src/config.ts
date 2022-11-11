@@ -7,7 +7,7 @@ import env, { ethers } from "hardhat";
 let provider: JsonRpcProvider;
 
 const isLocal = true;
-const isDeployed = false;
+const isDeployed = true;
 
 if (!isLocal) {
   // const provider = new ethers.providers.JsonRpcProvider();
@@ -19,7 +19,7 @@ if (!isLocal) {
   new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
   // web3 = new Web3(provider);
 } else {
-  provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:7545", { chainId: 1337, name: "unknown" });
+  provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545", { chainId: 31337, name: "unknown" });
 }
 
 // const IArbitrage = require('../build/contracts/Arbitrage.json');

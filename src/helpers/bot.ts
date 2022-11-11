@@ -123,7 +123,7 @@ const determineProfitability = async (query: {
   uPair: Contract;
   sPair: Contract;
   account: string;
-  balanceBefore: string;
+  balanceBefore: BigNumber;
   ethBalanceBefore: BigNumber;
 }): Promise<boolean> => {
   console.log(`Determining Profitability...\n`);
@@ -149,9 +149,7 @@ const determineProfitability = async (query: {
 
   try {
     // This returns the amount of WETH needed
-    console.log("reserves[0]", reserves[0]);
     const result = await query._routerPath[0].getAmountsIn(reserves[0], [query._token0.address, query._token1.address]);
-    console.log("result", result);
 
     const token0In = result[0]; // WETH
     const token1In = result[1]; // SHIB
@@ -164,29 +162,27 @@ const determineProfitability = async (query: {
     console.log(`Estimated amount of WETH needed to buy enough SHIB on ${exchangeToBuy}\t\t| ${ethers.utils.formatEther(token0In)}`);
     console.log(`Estimated amount of WETH returned after swapping SHIB on ${exchangeToSell}\t| ${ethers.utils.formatEther(_result[1])}\n`);
 
-    let ethBalanceBefore = ethers.utils.formatEther(query.ethBalanceBefore);
-    const ethBalanceAfter = Number(ethBalanceBefore) - config.GAS_PRICE;
+    const balanceAfter = BigNumber.from(query.ethBalanceBefore).sub(ethers.utils.parseUnits(config.GAS_PRICE.toString(), "ether"));
 
     const amountDifference = BigNumber.from(amountOut).sub(amountIn);
     let wethBalanceBefore = query.balanceBefore;
-    wethBalanceBefore = ethers.utils.formatEther(wethBalanceBefore);
 
     const wethBalanceAfter = BigNumber.from(wethBalanceBefore).add(amountDifference).toString();
     const wethBalanceDifference = BigNumber.from(wethBalanceAfter).sub(wethBalanceBefore).toString();
 
-    const totalGained = BigNumber.from(wethBalanceDifference).sub(config.GAS_PRICE).toString();
+    const totalGained = BigNumber.from(wethBalanceDifference).sub(ethers.utils.parseUnits(config.GAS_PRICE.toString(), "ether")).toString();
 
     const data = {
-      "ETH Balance Before": ethBalanceBefore,
-      "ETH Balance After": ethBalanceAfter,
+      "ETH Balance Before": ethers.utils.formatEther(query.ethBalanceBefore),
+      "ETH Balance After": ethers.utils.formatEther(balanceAfter),
       "ETH Spent (gas)": config.GAS_PRICE,
       "-": {},
-      "WETH Balance BEFORE": wethBalanceBefore,
-      "WETH Balance AFTER": wethBalanceAfter,
-      "WETH Gained/Lost": wethBalanceDifference,
+      "WETH Balance BEFORE": ethers.utils.formatEther(wethBalanceBefore),
+      "WETH Balance AFTER": ethers.utils.formatEther(wethBalanceAfter),
+      "WETH Gained/Lost": ethers.utils.formatEther(wethBalanceDifference),
       // @ts-ignore
       "-": {},
-      "Total Gained/Lost": totalGained,
+      "Total Gained/Lost": ethers.utils.formatEther(totalGained),
     };
 
     console.table(data);
@@ -210,7 +206,7 @@ const executeTrade = async (query: {
   _token0Contract: Contract;
   _token1Contract: Contract;
   account: string;
-  balanceBefore: string;
+  balanceBefore: BigNumber;
   ethBalanceBefore: BigNumber;
 }): Promise<void> => {
   console.log(`Attempting Arbitrage...\n`);
@@ -227,31 +223,30 @@ const executeTrade = async (query: {
     const IArbitrage = await hre.artifacts.readArtifact("Arbitrage");
     const getSigner = provider.getSigner();
     const arbitrage = new ethers.Contract(process.env.ARBITRAGE_CONTRACT_ADDRESS as string, IArbitrage.abi, getSigner);
-    const txExecuteTradeResponse = await arbitrage.executeTrade(startOnUniswap, query._token0Contract.address, query._token1Contract.address, amount);
+    const txExecuteTradeResponse = await arbitrage.executeTrade(startOnUniswap, query._token0Contract.address, query._token1Contract.address, amount.toString());
     const txExecuteTradeReceipt = await txExecuteTradeResponse.wait();
-    console.log("txExecuteTradeReceipt", txExecuteTradeReceipt);
   }
 
   console.log(`Trade Complete:\n`);
 
   // Fetch token balance after
   const balanceAfter = await query._token0Contract.balanceOf(query.account);
-  const ethBalanceAfter = BigNumber.from(await provider.getBalance(query.account));
+  const ethBalanceAfter = await provider.getBalance(query.account);
 
   const balanceDifference = BigNumber.from(balanceAfter).sub(query.balanceBefore);
   const totalSpent = BigNumber.from(query.ethBalanceBefore).sub(ethBalanceAfter);
 
   const data = {
-    "ETH Balance Before": ethers.utils.formatEther(query.ethBalanceBefore.toString()),
-    "ETH Balance After": ethers.utils.formatEther(ethBalanceAfter.toString()),
-    "ETH Spent (gas)": ethers.utils.formatEther(BigNumber.from(query.ethBalanceBefore).sub(ethBalanceAfter).toString()),
+    "ETH Balance Before": ethers.utils.formatEther(query.ethBalanceBefore),
+    "ETH Balance After": ethers.utils.formatEther(ethBalanceAfter),
+    "ETH Spent (gas)": ethers.utils.formatEther(BigNumber.from(query.ethBalanceBefore).sub(ethBalanceAfter)),
     "-": {},
-    "WETH Balance BEFORE": ethers.utils.formatEther(query.balanceBefore.toString()),
-    "WETH Balance AFTER": ethers.utils.formatEther(balanceAfter.toString()),
-    "WETH Gained/Lost": ethers.utils.formatEther(balanceDifference.toString()),
+    "WETH Balance BEFORE": ethers.utils.formatEther(query.balanceBefore),
+    "WETH Balance AFTER": ethers.utils.formatEther(balanceAfter),
+    "WETH Gained/Lost": ethers.utils.formatEther(balanceDifference),
     // @ts-ignore
     "-": {},
-    "Total Gained/Lost": `${ethers.utils.formatEther(BigNumber.from(balanceDifference).sub(totalSpent).toString())} ETH`,
+    "Total Gained/Lost": `${ethers.utils.formatEther(BigNumber.from(balanceDifference).sub(totalSpent))} ETH`,
   };
 
   console.table(data);
