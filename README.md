@@ -20,7 +20,7 @@
 ### 3. Create and Setup .env
 Before running any scripts, you'll need to create a .env file with the following values (see .env.example):
 
-- **ALCHEMY_API_KEY=""**
+- **ETH_NODE_URI**="https://eth-mainnet.alchemyapi.io/v2/apiKey"
 - **MNEMONIC**="season clay citizen print travel olive umbrella cream high wrestle cupboard trash" (I use this for testing only. the first account goingto recieve profit/execute arbitrage contract)
 - **PRICE_DIFFERENCE=0.50** (Difference in price between Uniswap & Sushiswap, default is 0.50%)
 - **UNITS=0** (Only used for price reporting)

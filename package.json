@@ -4,12 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bot": "npx hardhat run --network localhost src/main.ts",
-    "swap": "npx hardhat run --network localhost src/swap.test.ts",
+    "bot": "npx hardhat run src/main.ts",
+    "swap": "npx hardhat run src/swap.test.ts",
     "test": "npx hardhat test",
+    "gas": "export REPORT_GAS=true;npx hardhat test",
     "coverage": "npx hardhat coverage",
-    "deploy": "npx hardhat run --network localhost scripts/deployArbitrage.ts",
-    "node:deploy:bot": "concurrently 'npx hardhat node' 'sleep 12 && npm run deploy' 'sleep 20 && npm run start'"
+    "accounts": "npx hardhat accounts",
+    "node": "npx hardhat node",
+    "deploy": "npx hardhat run scripts/deployArbitrage.ts",
+    "node:deploy:bot": "concurrently 'npx hardhat node' 'sleep 7 && npm run deploy' 'sleep 15 && npm run bot'"
   },
   "keywords": [],
   "author": "",

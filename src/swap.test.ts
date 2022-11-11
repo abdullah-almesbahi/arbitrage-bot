@@ -46,11 +46,11 @@ async function manipulatePrice(tokens: Array<Token>, account: string) {
 
   const txApproveResponse = await ERC20_CONTRACT.connect(impersonatedSigner).approve(V2_ROUTER_TO_USE.address, amountIn);
   const txApproveReceipt = await txApproveResponse.wait();
-  console.log("txApproveReceipt", txApproveReceipt);
+  // console.log("txApproveReceipt", txApproveReceipt);
 
   const txSwapResponse = await V2_ROUTER_TO_USE.connect(impersonatedSigner).swapExactTokensForTokens(amountIn, 0, path, account, deadline);
   const txSwapReceipt = await txSwapResponse.wait();
-  console.log("txSwapReceipt", txSwapReceipt);
+  // console.log("txSwapReceipt", txSwapReceipt);
 
   console.log(`Swap Complete!\n`);
 

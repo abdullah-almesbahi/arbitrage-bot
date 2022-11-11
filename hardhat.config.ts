@@ -1,34 +1,54 @@
 import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "hardhat-gas-reporter";
 import * as dotenv from "dotenv";
+import { accounts, node_url } from "./src/helpers/network";
 dotenv.config();
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: "localhost",
   networks: {
-    mainnet: {
-      url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-        // path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 20,
-        passphrase: "",
-      },
-    },
     hardhat: {
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+        url: node_url("mainnet"),
       },
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-      },
+      accounts: accounts(),
+      // gas:
+      // gasPrice
     },
-    localhost: {},
-    // rinkeby: {
-    //   url: "https://eth-rinkeby.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
-    //   accounts: [privateKey1, privateKey2, ...]
-    // }
+    localhost: {
+      url: node_url("localhost"),
+    },
+    staging: {
+      url: node_url("rinkeby"),
+      accounts: accounts("rinkeby"),
+    },
+    production: {
+      url: node_url("mainnet"),
+      accounts: accounts("mainnet"),
+    },
+    mainnet: {
+      url: node_url("mainnet"),
+      accounts: accounts("mainnet"),
+    },
+    rinkeby: {
+      url: node_url("rinkeby"),
+      accounts: accounts("rinkeby"),
+    },
+    kovan: {
+      url: node_url("kovan"),
+      accounts: accounts("kovan"),
+    },
+    goerli: {
+      url: node_url("goerli"),
+      accounts: accounts("goerli"),
+    },
+  },
+  gasReporter: {
+    currency: "USD",
+    gasPrice: 100,
+    enabled: process.env.REPORT_GAS ? true : false,
+    maxMethodDiff: 10,
   },
   solidity: {
     version: "0.8.17",
