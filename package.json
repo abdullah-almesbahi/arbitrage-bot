@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "bot": "npx hardhat run src/main.ts",
-    "swap": "npx hardhat run src/swap.test.ts",
+    "swap": "npx hardhat swap",
     "test": "npx hardhat test",
     "gas": "export REPORT_GAS=true;npx hardhat test",
     "coverage": "npx hardhat coverage",

@@ -70,4 +70,19 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+task("swap", "Manipulate the price with specific pairs")
+  .addOptionalPositionalParam("pair")
+  .setAction(async ({ pair }, hre) => {
+    if (!pair) {
+      pair = 0;
+    }
+    const manipulatePrice = require("./src/swap.test").default;
+    // console.log("manipulatePrice", manipulatePrice);
+    // import manipulatePrice from "./src/swap.test";
+    await manipulatePrice(pair).catch((error: Error) => {
+      console.error(error);
+      process.exitCode = 1;
+    });
+  });
+
 export default config;

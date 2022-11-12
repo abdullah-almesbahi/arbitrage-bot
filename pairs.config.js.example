@@ -1,0 +1,8 @@
+module.exports = [
+   {
+     for: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
+     against: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", // SHIB
+     _unlockAddress: "0xdEAD000000000000000042069420694206942069", // testing purpose
+     _swapAmount: "405000000000000", // testing purpose
+  },
+];

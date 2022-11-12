@@ -9,4 +9,5 @@ typechain-types
 #Hardhat files
 cache
 artifacts
+pairs.config.js
 

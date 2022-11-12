@@ -1,3 +1,5 @@
+import { PairsType } from "../types";
+
 export function node_url(networkName: string): string {
   if (networkName) {
     const uri = process.env["ETH_NODE_URI_" + networkName.toUpperCase()];
@@ -42,4 +44,21 @@ export function getMnemonic(networkName?: string): string {
 
 export function accounts(networkName?: string): { mnemonic: string; count: number } {
   return { mnemonic: getMnemonic(networkName), count: 2 };
+}
+
+export function getPairs(): Array<PairsType> {
+  let m;
+  try {
+    m = require("../../pairs.config");
+  } catch (ex) {
+    m = [
+      {
+        for: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
+        against: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", // SHIB
+        _unlockAddress: "0xdEAD000000000000000042069420694206942069", // testing purpose
+        _swapAmount: "405000000000000", // testing purpose
+      },
+    ];
+  }
+  return m;
 }

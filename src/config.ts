@@ -2,7 +2,7 @@
 const IUniswapV2Router02 = require("@uniswap/v2-periphery/build/IUniswapV2Router02.json");
 const IUniswapV2Factory = require("@uniswap/v2-core/build/IUniswapV2Factory.json");
 import { JsonRpcProvider } from "@ethersproject/providers/src.ts/json-rpc-provider";
-import env, { ethers } from "hardhat";
+import { ethers } from "hardhat";
 
 let provider: JsonRpcProvider;
 
@@ -21,12 +21,6 @@ if (!isLocal) {
 } else {
   provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545", { chainId: 31337, name: "unknown" });
 }
-
-// const IArbitrage = require('../build/contracts/Arbitrage.json');
-// const arbitrage = new web3.eth.Contract(
-//   IArbitrage.abi,
-//   IArbitrage.networks[1].address,
-// );
 
 export const exchangesForkedUniswapV2 = {
   UNISWAP: {
@@ -49,15 +43,7 @@ const exchangesForkedUniswapV2Contract = {
   },
 };
 
-const arbitrageTokens = [
-  {
-    for: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
-    against: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", // SHIB
-  },
-];
-
 export default {
-  ARBITRAGE_TOKENS: arbitrageTokens,
   PROJECT_SETTINGS: {
     isLocal: isLocal,
     isDeployed: isDeployed,

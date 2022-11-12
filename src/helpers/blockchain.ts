@@ -55,9 +55,9 @@ export async function getReserves(_pairContract: Contract): Promise<Array<BigNum
   return [reserves.reserve0, reserves.reserve1];
 }
 
-export async function calculatePrice(_pairContract: Contract): Promise<string> {
+export async function calculatePrice(_pairContract: Contract): Promise<BigNumber> {
   const [reserve0, reserve1] = await getReserves(_pairContract);
-  return BigNumber.from(reserve0).div(BigNumber.from(reserve1)).toString();
+  return BigNumber.from(reserve0).div(reserve1);
 }
 
 export async function getEstimatedReturn(amount: BigNumber, _routerPath: Array<Contract>, _token0: Token, _token1: Token): Promise<{ amountIn: BigNumber; amountOut: BigNumber }> {

@@ -55,8 +55,6 @@ export const onReceiveSwapEvent = async (query: {
       ethBalanceBefore,
     });
 
-    console.log("isProfitable", isProfitable);
-
     if (!isProfitable) {
       console.log(`No Arbitrage Currently Available\n`);
       console.log(`-----------------------------------------\n`);
@@ -86,8 +84,8 @@ const checkPrice = async (query: { exchange: string; token0: Token; token1: Toke
 
   const uFPrice = Number(uPrice).toFixed(config.UNITS);
   const sFPrice = Number(sPrice).toFixed(config.UNITS);
-  const priceDifference = (((Number(uFPrice) - Number(sFPrice)) / Number(sFPrice)) * 100).toFixed(2);
 
+  const priceDifference = (((Number(uFPrice) - Number(sFPrice)) / Number(sFPrice)) * 100).toFixed(2);
   console.log(`Current Block: ${currentBlock}`);
   console.log(`-----------------------------------------`);
   console.log(`UNISWAP   | ${query.token1.symbol}/${query.token0.symbol}\t | ${uFPrice}`);
@@ -132,7 +130,6 @@ const determineProfitability = async (query: {
   // This is a basic example of trading WETH/SHIB...
 
   let reserves, exchangeToBuy, exchangeToSell;
-
   if (query._routerPath[0].address == config.EXCHANGES_CONTRACT.UNISWAP.ROUTER.address) {
     reserves = await getReserves(query.sPair);
     exchangeToBuy = "Uniswap";
@@ -144,7 +141,7 @@ const determineProfitability = async (query: {
   }
 
   console.log(`Reserves on ${query._routerPath[1].address}`);
-  console.log(`SHIB: ${Number(ethers.utils.formatEther(reserves[0].toString())).toFixed(0)}`);
+  console.log(`${query._token1.symbol}: ${Number(ethers.utils.formatEther(reserves[0].toString())).toFixed(0)}`);
   console.log(`WETH: ${ethers.utils.formatEther(reserves[1].toString())}\n`);
 
   try {
@@ -159,8 +156,8 @@ const determineProfitability = async (query: {
       getEstimatedReturn(token0In, query._routerPath, query._token0, query._token1),
     ]);
 
-    console.log(`Estimated amount of WETH needed to buy enough SHIB on ${exchangeToBuy}\t\t| ${ethers.utils.formatEther(token0In)}`);
-    console.log(`Estimated amount of WETH returned after swapping SHIB on ${exchangeToSell}\t| ${ethers.utils.formatEther(_result[1])}\n`);
+    console.log(`Estimated amount of WETH needed to buy enough ${query._token1.symbol} on ${exchangeToBuy}\t\t| ${ethers.utils.formatEther(token0In)}`);
+    console.log(`Estimated amount of WETH returned after swapping ${query._token1.symbol} on ${exchangeToSell}\t| ${ethers.utils.formatEther(_result[1])}\n`);
 
     const balanceAfter = BigNumber.from(query.ethBalanceBefore).sub(ethers.utils.parseUnits(config.GAS_PRICE.toString(), "ether"));
 
@@ -187,7 +184,7 @@ const determineProfitability = async (query: {
 
     console.table(data);
 
-    if (amountOut < amountIn) {
+    if (amountOut.lt(amountIn)) {
       return false;
     }
 

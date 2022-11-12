@@ -26,9 +26,16 @@ Before running any scripts, you'll need to create a .env file with the following
 - **UNITS=0** (Only used for price reporting)
 - **GAS_LIMIT=600000** (Currently a hardcoded value, may need to adjust during testing)
 - **GAS_PRICE=0.0093** (Currently a hardcoded value, may need to adjust during testing)
-### 4. Start Hardhat node, deploy contract and start the bot
+### 4. Create and Setup pairs.config.js
+Before running any scripts, you'll need to create a pairs.config.js file with the following values (see pairs.config.js.example):
+
+- **for**="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" (By default we are using WETH)
+- **against**="0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE" (By default we are using SHIB)
+- **_unlockAddress=0xdEAD000000000000000042069420694206942069** (This is optional if you want to test locally and manipulate the pool price)
+- **_swapAmount=405000000000000** (This is optional if you want to test locally and manipulate the pool price)
+### 5. Start Hardhat node, deploy contract and start the bot
 `$ npm run node:deploy:bot`
 
-### 5. Manipulate Price
+### 6. Manipulate Price
 In another terminal run:
-`$ npm run swap`
+`$ npm run swap <PairIndexNumber>`
