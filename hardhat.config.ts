@@ -30,6 +30,7 @@ const config: HardhatUserConfig = {
     mainnet: {
       url: node_url("mainnet"),
       accounts: accounts("mainnet"),
+      chainId: 1,
     },
     rinkeby: {
       url: node_url("rinkeby"),
@@ -42,6 +43,7 @@ const config: HardhatUserConfig = {
     goerli: {
       url: node_url("goerli"),
       accounts: accounts("goerli"),
+      chainId: 5,
     },
   },
   gasReporter: {

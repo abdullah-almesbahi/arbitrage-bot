@@ -3,7 +3,9 @@ import config, { provider } from "../config";
 import { Token } from "@uniswap/sdk";
 import { Contract } from "@ethersproject/contracts";
 import { BigNumber } from "@ethersproject/bignumber";
-import { ethers } from "hardhat";
+import hre, { ethers } from "hardhat";
+import { isBigNumberOrExit } from "./general";
+import { getContractAddress } from "./network";
 
 let amount: number;
 let isExecuting = false;
@@ -24,7 +26,7 @@ export const onReceiveSwapEvent = async (query: {
     const [balanceBefore, ethBalanceBefore, priceDifference] = await Promise.all([
       // Fetch token balance before
       query.token0Contract.balanceOf(query.account),
-      provider.getBalance(query.account),
+      ethers.provider.getBalance(query.account),
       checkPrice({
         exchange: query.exchangeName,
         token0: query.token0,
@@ -33,6 +35,8 @@ export const onReceiveSwapEvent = async (query: {
         sPair: query.sPair,
       }),
     ]);
+    isBigNumberOrExit(balanceBefore);
+    isBigNumberOrExit(ethBalanceBefore);
 
     const routerPath = await determineDirection(priceDifference);
 
@@ -143,17 +147,24 @@ const determineProfitability = async (query: {
   console.log(`Reserves on ${query._routerPath[1].address}`);
   console.log(`${query._token1.symbol}: ${Number(ethers.utils.formatEther(reserves[0].toString())).toFixed(0)}`);
   console.log(`WETH: ${ethers.utils.formatEther(reserves[1].toString())}\n`);
+  if (Number(reserves[0]) === 0 || Number(reserves[0]) === 0) {
+    console.log(`One of the reserve is eq 0, this pair should be remove`);
+    return false;
+  }
 
   try {
     // This returns the amount of WETH needed
-    const result = await query._routerPath[0].getAmountsIn(reserves[0], [query._token0.address, query._token1.address]);
-
+    const result = await query._routerPath[0].getAmountsIn(reserves[0].toString(), [query._token0.address, query._token1.address]);
+    isBigNumberOrExit(result[0]);
+    isBigNumberOrExit(result[1]);
     const token0In = result[0]; // WETH
     const token1In = result[1]; // SHIB
 
     const [_result, { amountIn, amountOut }] = await Promise.all([
-      query._routerPath[1].getAmountsOut(token1In, [query._token1.address, query._token0.address]),
-      getEstimatedReturn(token0In, query._routerPath, query._token0, query._token1),
+      query._routerPath[1].getAmountsOut(token1In.toString(), [query._token1.address, query._token0.address]),
+      getEstimatedReturn(token0In, query._routerPath, query._token0, query._token1).catch((error) => {
+        console.log("err:getEstimatedReturn", error);
+      }),
     ]);
 
     console.log(`Estimated amount of WETH needed to buy enough ${query._token1.symbol} on ${exchangeToBuy}\t\t| ${ethers.utils.formatEther(token0In)}`);
@@ -164,10 +175,10 @@ const determineProfitability = async (query: {
     const amountDifference = BigNumber.from(amountOut).sub(amountIn);
     let wethBalanceBefore = query.balanceBefore;
 
-    const wethBalanceAfter = BigNumber.from(wethBalanceBefore).add(amountDifference).toString();
-    const wethBalanceDifference = BigNumber.from(wethBalanceAfter).sub(wethBalanceBefore).toString();
+    const wethBalanceAfter = BigNumber.from(wethBalanceBefore).add(amountDifference);
+    const wethBalanceDifference = BigNumber.from(wethBalanceAfter).sub(wethBalanceBefore);
 
-    const totalGained = BigNumber.from(wethBalanceDifference).sub(ethers.utils.parseUnits(config.GAS_PRICE.toString(), "ether")).toString();
+    const totalGained = BigNumber.from(wethBalanceDifference).sub(ethers.utils.parseUnits(config.GAS_PRICE.toString(), "ether"));
 
     const data = {
       "ETH Balance Before": ethers.utils.formatEther(query.ethBalanceBefore),
@@ -185,6 +196,11 @@ const determineProfitability = async (query: {
     console.table(data);
 
     if (amountOut.lt(amountIn)) {
+      console.log("amount out is less than amount in");
+      return false;
+    }
+    if (totalGained.lt(0)) {
+      console.log("totalGained in minus");
       return false;
     }
 
@@ -216,10 +232,10 @@ const executeTrade = async (query: {
     startOnUniswap = false;
   }
 
-  if (config.PROJECT_SETTINGS.isDeployed) {
+  if (config.PROJECT_SETTINGS.isDeployed && getContractAddress(hre.network.name)) {
     const IArbitrage = await hre.artifacts.readArtifact("Arbitrage");
-    const getSigner = provider.getSigner();
-    const arbitrage = new ethers.Contract(process.env.ARBITRAGE_CONTRACT_ADDRESS as string, IArbitrage.abi, getSigner);
+    const getSigner = ethers.provider.getSigner();
+    const arbitrage = new ethers.Contract(getContractAddress(hre.network.name) as string, IArbitrage.abi, getSigner);
     const txExecuteTradeResponse = await arbitrage.executeTrade(startOnUniswap, query._token0Contract.address, query._token1Contract.address, amount.toString());
     const txExecuteTradeReceipt = await txExecuteTradeResponse.wait();
   }
@@ -228,7 +244,7 @@ const executeTrade = async (query: {
 
   // Fetch token balance after
   const balanceAfter = await query._token0Contract.balanceOf(query.account);
-  const ethBalanceAfter = await provider.getBalance(query.account);
+  const ethBalanceAfter = await ethers.provider.getBalance(query.account);
 
   const balanceDifference = BigNumber.from(balanceAfter).sub(query.balanceBefore);
   const totalSpent = BigNumber.from(query.ethBalanceBefore).sub(ethBalanceAfter);

@@ -1,10 +1,10 @@
-import config, { provider } from "./config";
+import config from "./config";
 import { calculatePrice, getPairContract, getTokenAndContract } from "./helpers/blockchain";
 import { onReceiveSwapEvent } from "./helpers/bot";
-import { Contract } from "@ethersproject/contracts";
 import { getPairs } from "./helpers/network";
-import { ethers } from "hardhat";
 import { PairsType } from "./types";
+import { ethers } from "hardhat";
+
 const fs = require("fs");
 
 async function loadPairs(pairs: PairsType, account: string) {
@@ -16,6 +16,7 @@ async function loadPairs(pairs: PairsType, account: string) {
     { name: "Pair", value: `${token0.symbol}/${token1.symbol}` },
     { name: "Price", value: `1 ${token0.symbol} = ${(await calculatePrice(uPair)).toNumber().toFixed(0)} ${token1.symbol}` },
   ]);
+
   uPair.on("Swap", async () => {
     onReceiveSwapEvent({
       exchangeName: "Uniswap",
@@ -51,7 +52,10 @@ async function loadPairs(pairs: PairsType, account: string) {
 
 async function main() {
   // Fetch account
-  const [account] = await provider.listAccounts();
+  const [account] = await ethers.provider.listAccounts();
+  if (!account) {
+    throw new Error("Account is undefined");
+  }
   const arbitragePairs = getPairs();
   for (let i = 0; i < arbitragePairs.length; i++) {
     await loadPairs(arbitragePairs[i], account);

@@ -5,6 +5,7 @@ import { ethers } from "hardhat";
 import { Contract } from "@ethersproject/contracts";
 import { BigNumber } from "@ethersproject/bignumber";
 import { provider } from "../config";
+import { isBigNumberOrExit } from "./general";
 
 const IUniswapV2Pair = require("@uniswap/v2-core/build/IUniswapV2Pair.json");
 const IERC20 = require("@openzeppelin/contracts/build/contracts/ERC20.json");
@@ -52,18 +53,24 @@ async function getPairAddress(_V2Factory: Contract, _token0: string, _token1: st
 
 export async function getReserves(_pairContract: Contract): Promise<Array<BigNumber>> {
   const reserves = await _pairContract.getReserves();
+  isBigNumberOrExit(reserves.reserve0);
+  isBigNumberOrExit(reserves.reserve1);
   return [reserves.reserve0, reserves.reserve1];
 }
 
 export async function calculatePrice(_pairContract: Contract): Promise<BigNumber> {
   const [reserve0, reserve1] = await getReserves(_pairContract);
+  isBigNumberOrExit(reserve0);
+  isBigNumberOrExit(reserve1);
   return BigNumber.from(reserve0).div(reserve1);
 }
 
 export async function getEstimatedReturn(amount: BigNumber, _routerPath: Array<Contract>, _token0: Token, _token1: Token): Promise<{ amountIn: BigNumber; amountOut: BigNumber }> {
-  const trade1 = await _routerPath[0].getAmountsOut(amount, [_token0.address, _token1.address]);
-  const trade2 = await _routerPath[1].getAmountsOut(trade1[1], [_token1.address, _token0.address]);
+  const trade1 = await _routerPath[0].getAmountsOut(amount.toString(), [_token0.address, _token1.address]);
+  const trade2 = await _routerPath[1].getAmountsOut(trade1[1].toString(), [_token1.address, _token0.address]);
   const amountIn = trade1[0];
   const amountOut = trade2[1];
+  isBigNumberOrExit(amountIn);
+  isBigNumberOrExit(amountOut);
   return { amountIn, amountOut };
 }

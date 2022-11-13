@@ -10,6 +10,7 @@
     "gas": "export REPORT_GAS=true;npx hardhat test",
     "coverage": "npx hardhat coverage",
     "accounts": "npx hardhat accounts",
+    "verify": "npx hardhat verify",
     "node": "npx hardhat node",
     "deploy": "npx hardhat run scripts/deployArbitrage.ts",
     "node:deploy:bot": "concurrently 'npx hardhat node' 'sleep 7 && npm run deploy' 'sleep 15 && npm run bot'"

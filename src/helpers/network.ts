@@ -46,6 +46,20 @@ export function accounts(networkName?: string): { mnemonic: string; count: numbe
   return { mnemonic: getMnemonic(networkName), count: 2 };
 }
 
+export function getContractAddress(networkName: string): string {
+  if (networkName) {
+    const _contractAddress = process.env["CONTRACT_ADDRESS_" + networkName.toUpperCase()];
+    if (_contractAddress && _contractAddress !== "") {
+      return _contractAddress;
+    }
+  }
+  const _contractAddress = process.env.CONTRACT_ADDRESS;
+  if (!_contractAddress || _contractAddress === "") {
+    return "";
+  }
+  return _contractAddress;
+}
+
 export function getPairs(): Array<PairsType> {
   let m;
   try {

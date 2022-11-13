@@ -14,8 +14,7 @@ const manipulatePrice = async (pairIndex: number) => {
   const AMOUNT = getPairs()[pairIndex]._swapAmount as string; // 40,500,000,000,000 SHIB -- Tokens will automatically be converted to wei
 
   const chainId = 1;
-  const provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545", { chainId: 31337, name: "unknown" });
-  const signer = provider.getSigner();
+  const provider = ethers.provider;
 
   const V2_FACTORY_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.FACTORY;
   const V2_ROUTER_TO_USE = config.EXCHANGES_CONTRACT.UNISWAP.ROUTER;

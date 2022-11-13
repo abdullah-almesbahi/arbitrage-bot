@@ -22,6 +22,7 @@ Before running any scripts, you'll need to create a .env file with the following
 
 - **ETH_NODE_URI**="https://eth-mainnet.alchemyapi.io/v2/apiKey"
 - **MNEMONIC**="season clay citizen print travel olive umbrella cream high wrestle cupboard trash" (I use this for testing only. the first account goingto recieve profit/execute arbitrage contract)
+- **CONTRACT_ADDRESS**="0xeE9F0a940f7eD451A08527Cb828B490D115dd51E" (Arbitrage contract address, it will appear to you after you deploy it)
 - **PRICE_DIFFERENCE=0.50** (Difference in price between Uniswap & Sushiswap, default is 0.50%)
 - **UNITS=0** (Only used for price reporting)
 - **GAS_LIMIT=600000** (Currently a hardcoded value, may need to adjust during testing)
@@ -39,3 +40,20 @@ Before running any scripts, you'll need to create a pairs.config.js file with th
 ### 6. Manipulate Price
 In another terminal run:
 `$ npm run swap <PairIndexNumber>`
+
+
+## MAINNET
+### 1. deploy contract
+`$ npm run deploy -- --network mainnet`
+### 2. verify contract
+`$ npm run verify -- --network mainnet`
+
+### 2. Copy contract address and put it in .env file
+CONTRACT_ADDRESS_MAINNET="0xeE9F0a940f7eD451A08527Cb828B490D115dd51E"
+
+### 3. Run the bot
+`$ npm run bot -- --network mainnet`
+
+## GOERLI
+### 1. deploy contract
+`$ npm run deploy -- --network goerli`

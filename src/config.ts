@@ -3,24 +3,13 @@ const IUniswapV2Router02 = require("@uniswap/v2-periphery/build/IUniswapV2Router
 const IUniswapV2Factory = require("@uniswap/v2-core/build/IUniswapV2Factory.json");
 import { JsonRpcProvider } from "@ethersproject/providers/src.ts/json-rpc-provider";
 import { ethers } from "hardhat";
+import hre from "hardhat";
 
 let provider: JsonRpcProvider;
 
-const isLocal = true;
-const isDeployed = true;
-
-if (!isLocal) {
-  // const provider = new ethers.providers.JsonRpcProvider();
-  // const provider = new HDWalletProvider({
-  //   privateKeys: [process.env.PRIVATE_KEY],
-  //   providerOrUrl: `wss://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
-  // });
-  provider = new ethers.providers.AlchemyWebSocketProvider("mainnet", process.env.ALCHEMY_API_KEY);
-  new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
-  // web3 = new Web3(provider);
-} else {
-  provider = new ethers.providers.WebSocketProvider("ws://127.0.0.1:8545", { chainId: 31337, name: "unknown" });
-}
+const isLocal = ["localhost", "hardhat"].includes(hre.network.name);
+const isDeployed = false;
+provider = new hre.ethers.providers.WebSocketProvider(hre.network.config.url.replace(/^http/i, "ws"));
 
 export const exchangesForkedUniswapV2 = {
   UNISWAP: {
@@ -32,6 +21,7 @@ export const exchangesForkedUniswapV2 = {
     FACTORY_ADDRESS: "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac",
   },
 };
+
 const exchangesForkedUniswapV2Contract = {
   UNISWAP: {
     ROUTER: new ethers.Contract(exchangesForkedUniswapV2.UNISWAP.V2_ROUTER_02_ADDRESS, IUniswapV2Router02.abi, provider),
