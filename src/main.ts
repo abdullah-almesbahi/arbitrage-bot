@@ -14,7 +14,7 @@ async function loadPairs(pairs: PairsType, account: string) {
   console.table([
     { name: "Uniswap pair address", value: uPair.address },
     { name: "Pair", value: `${token0.symbol}/${token1.symbol}` },
-    { name: "Price", value: `1 ${token0.symbol} = ${(await calculatePrice(uPair)).toNumber().toFixed(0)} ${token1.symbol}` },
+    { name: "Price", value: `1 ${token0.symbol} = ${(await calculatePrice(uPair, token0.address)).toNumber().toFixed(0)} ${token1.symbol}` },
   ]);
 
   uPair.on("Swap", async () => {
@@ -33,7 +33,7 @@ async function loadPairs(pairs: PairsType, account: string) {
   console.table([
     { name: "Sushiswap pair address", value: sPair.address },
     { name: "Pair", value: `${token0.symbol}/${token1.symbol}` },
-    { name: "Price", value: `1 ${token0.symbol} = ${(await calculatePrice(sPair)).toNumber().toFixed(0)} ${token1.symbol}` },
+    { name: "Price", value: `1 ${token0.symbol} = ${(await calculatePrice(sPair, token0.address)).toNumber().toFixed(0)} ${token1.symbol}` },
   ]);
   sPair.on("Swap", async () => {
     onReceiveSwapEvent({

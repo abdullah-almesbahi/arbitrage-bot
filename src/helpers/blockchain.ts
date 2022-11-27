@@ -40,37 +40,51 @@ export async function getTokenAndContract(
   return { token0Contract, token1Contract, token0, token1 };
 }
 
-export async function getPairContract(_V2Factory: Contract, _token0: string, _token1: string): Promise<Contract> {
-  const pairAddress = await getPairAddress(_V2Factory, _token0, _token1);
+export async function getPairContract(_V2Factory: Contract, _token0Address: string, _token1Address: string): Promise<Contract> {
+  const pairAddress = await getPairAddress(_V2Factory, _token0Address, _token1Address);
   const pairContract = new ethers.Contract(pairAddress, IUniswapV2Pair.abi, provider);
   return pairContract;
 }
 
-async function getPairAddress(_V2Factory: Contract, _token0: string, _token1: string): Promise<string> {
-  const pairAddress = await _V2Factory.getPair(_token0, _token1);
+export async function getPairAddress(_V2Factory: Contract, _token0Address: string, _token1Address: string): Promise<string> {
+  const pairAddress = await _V2Factory.getPair(_token0Address, _token1Address);
   return pairAddress;
 }
 
-export async function getReserves(_pairContract: Contract): Promise<Array<BigNumber>> {
+/**
+ * Get reserves for a given pair address in the same pair sort
+ *
+ * @export
+ * @param {Contract} _pairContract
+ * @return {*}  {Promise<Array<BigNumber>>}
+ */
+export async function getReserves(_pairContract: Contract, _token0Address: string): Promise<Array<BigNumber>> {
   const reserves = await _pairContract.getReserves();
-  isBigNumberOrExit(reserves.reserve0);
-  isBigNumberOrExit(reserves.reserve1);
-  return [reserves.reserve0, reserves.reserve1];
+  if ((await _pairContract.token0()) === _token0Address) {
+    return [reserves.reserve0, reserves.reserve1];
+  } else {
+    return [reserves.reserve1, reserves.reserve0];
+  }
 }
 
-export async function calculatePrice(_pairContract: Contract): Promise<BigNumber> {
-  const [reserve0, reserve1] = await getReserves(_pairContract);
-  isBigNumberOrExit(reserve0);
-  isBigNumberOrExit(reserve1);
+export async function calculatePrice(_pairContract: Contract, _token0Address: string): Promise<BigNumber> {
+  // FIXME: we need to check the number of decimal to get the correct price
+  const [reserve0, reserve1] = await getReserves(_pairContract, _token0Address);
   return BigNumber.from(reserve0).div(reserve1);
 }
 
+/**
+ *
+ *
+ * @export
+ * @param {BigNumber} amount WETH
+ * @param {Array<Contract>} _routerPath
+ * @param {Token} _token0
+ * @param {Token} _token1
+ * @return {*}  {Promise<{ amountIn: BigNumber; amountOut: BigNumber }>}
+ */
 export async function getEstimatedReturn(amount: BigNumber, _routerPath: Array<Contract>, _token0: Token, _token1: Token): Promise<{ amountIn: BigNumber; amountOut: BigNumber }> {
   const trade1 = await _routerPath[0].getAmountsOut(amount.toString(), [_token0.address, _token1.address]);
   const trade2 = await _routerPath[1].getAmountsOut(trade1[1].toString(), [_token1.address, _token0.address]);
-  const amountIn = trade1[0];
-  const amountOut = trade2[1];
-  isBigNumberOrExit(amountIn);
-  isBigNumberOrExit(amountOut);
-  return { amountIn, amountOut };
+  return { amountIn: trade1[0], amountOut: trade2[1] };
 }

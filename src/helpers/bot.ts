@@ -84,7 +84,7 @@ const checkPrice = async (query: { exchange: string; token0: Token; token1: Toke
 
   console.log(`Swap Initiated on ${query.exchange}, Checking Price...\n`);
 
-  const [currentBlock, uPrice, sPrice] = await Promise.all([provider.getBlockNumber(), calculatePrice(query.uPair), calculatePrice(query.sPair)]);
+  const [currentBlock, uPrice, sPrice] = await Promise.all([provider.getBlockNumber(), calculatePrice(query.uPair, query.token0.address), calculatePrice(query.sPair, query.token0.address)]);
 
   const uFPrice = Number(uPrice).toFixed(config.UNITS);
   const sFPrice = Number(sPrice).toFixed(config.UNITS);
@@ -117,54 +117,73 @@ const determineDirection = async (priceDifference: number): Promise<null | Array
   }
 };
 
-const determineProfitability = async (query: {
+/**
+ * We should calculate here:
+ * - Estimeted amount out
+ * - Gas fee for executing arbitrage contract
+ * - Slippage
+ * - Exchange Fee
+ * - Loan fee
+ *
+ * @param {{
+ *   _routerPath: Array<Contract>;
+ *   _token0Contract: Contract;
+ *   _token0: Token;
+ *   _token1: Token;
+ *   uPair: Contract;
+ *   sPair: Contract;
+ *   account: string;
+ *   balanceBefore: BigNumber;
+ *   ethBalanceBefore: BigNumber;
+ * }} query
+ * @return {*}  {Promise<boolean>}
+ */
+export const determineProfitability = async (query: {
   _routerPath: Array<Contract>;
   _token0Contract: Contract;
   _token0: Token;
   _token1: Token;
   uPair: Contract;
   sPair: Contract;
-  account: string;
+  // account: string;
   balanceBefore: BigNumber;
   ethBalanceBefore: BigNumber;
 }): Promise<boolean> => {
   console.log(`Determining Profitability...\n`);
 
-  // This is where you can customize your conditions on whether a profitable trade is possible.
-  // This is a basic example of trading WETH/SHIB...
-
-  let reserves, exchangeToBuy, exchangeToSell;
+  let destReserves, exchangeToBuy, exchangeToSell, destPair;
   if (query._routerPath[0].address == config.EXCHANGES_CONTRACT.UNISWAP.ROUTER.address) {
-    reserves = await getReserves(query.sPair);
+    destReserves = await getReserves(query.sPair, query._token0.address);
+    destPair = query.sPair;
     exchangeToBuy = "Uniswap";
     exchangeToSell = "Sushiswap";
   } else {
-    reserves = await getReserves(query.uPair);
+    destReserves = await getReserves(query.uPair, query._token0.address);
+    destPair = query.uPair;
     exchangeToBuy = "Sushiswap";
     exchangeToSell = "Uniswap";
   }
 
-  console.log(`Reserves on ${query._routerPath[1].address}`);
-  console.log(`${query._token1.symbol}: ${Number(ethers.utils.formatEther(reserves[0].toString())).toFixed(0)}`);
-  console.log(`WETH: ${ethers.utils.formatEther(reserves[1].toString())}\n`);
-  if (Number(reserves[0]) === 0 || Number(reserves[0]) === 0) {
+  console.log(`Reserves on ${exchangeToSell} ${destPair.address}`);
+  console.log(`${query._token0.symbol}: ${ethers.utils.formatEther(destReserves[0].toString())}\n`);
+  console.log(`${query._token1.symbol}: ${Number(ethers.utils.formatEther(destReserves[1].toString())).toFixed(0)}`);
+  if (Number(destReserves[0]) === 0 || Number(destReserves[1]) === 0) {
     console.log(`One of the reserve is eq 0, this pair should be remove`);
     return false;
   }
 
   try {
     // This returns the amount of WETH needed
-    const result = await query._routerPath[0].getAmountsIn(reserves[0].toString(), [query._token0.address, query._token1.address]);
-    isBigNumberOrExit(result[0]);
-    isBigNumberOrExit(result[1]);
+
+    // pass SHIB as amount
+    const result = await query._routerPath[0].getAmountsIn(destReserves[1].toString(), [query._token0.address, query._token1.address]);
+    console.log("result", result);
     const token0In = result[0]; // WETH
     const token1In = result[1]; // SHIB
 
     const [_result, { amountIn, amountOut }] = await Promise.all([
       query._routerPath[1].getAmountsOut(token1In.toString(), [query._token1.address, query._token0.address]),
-      getEstimatedReturn(token0In, query._routerPath, query._token0, query._token1).catch((error) => {
-        console.log("err:getEstimatedReturn", error);
-      }),
+      getEstimatedReturn(token0In, query._routerPath, query._token0, query._token1),
     ]);
 
     console.log(`Estimated amount of WETH needed to buy enough ${query._token1.symbol} on ${exchangeToBuy}\t\t| ${ethers.utils.formatEther(token0In)}`);
