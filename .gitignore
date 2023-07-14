@@ -10,4 +10,5 @@ typechain-types
 cache
 artifacts
 pairs.config.js
+.DS_Store
 

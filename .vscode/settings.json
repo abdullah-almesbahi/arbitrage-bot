@@ -28,6 +28,12 @@
 			"source.organizeImports": false
 		}
 	},
+	"[solidity]": {
+		"editor.formatOnSave": true,
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": false
+		}
+	},
 	"[typescript]": {
 		"editor.formatOnPaste": false,
 		"editor.formatOnSave": true,
